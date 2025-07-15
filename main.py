@@ -1,5 +1,6 @@
 import requests
 import json
+import base64
 
 # Session globale partagée
 session = requests.Session()
@@ -9,20 +10,20 @@ heads = {
 }
 
 def get_gtk_cookie():
-    url = "https://api.ecoledirecte.com/v3/login.awp"
+    url : str ="https://api.ecoledirecte.com/v3/login.awp"
     params = {"gtk": "1", "v": "4.75.0"}
 
     response = session.get(url, headers=heads, params=params)
     response.raise_for_status()
 
-    gtk = session.cookies.get("GTK")
+    gtk :str = session.cookies.get("GTK")
     if not gtk:
         raise Exception("GTK cookie non trouvé")
     gtk = gtk.replace("\r", "").replace("\n", "")
     heads["X-Gtk"] = gtk
     return gtk
 
-def login(user_id, password):
+def login(user_id=str, password=str):
     get_gtk_cookie()
     data = {
         "identifiant": user_id,
@@ -37,8 +38,20 @@ def login(user_id, password):
         "https://api.ecoledirecte.com/v3/login.awp?v=4.75.0",
         headers=heads,
         data={"data": json_data}
-    )
-    response.raise_for_status()
-    return response.json()
+    ).json()
+    token = response["token"]
 
-print(login())
+    heads["X-Token"] = token
+
+def second_auth(UID, Password):
+    login(UID,Password)
+    data: str = "data={}"  
+    response : str = requests.post(url="https://api.ecoledirecte.com/v3/connexion/doubleauth.awp?verbe=get",headers=heads,data=data)
+    response = response.json()
+    question: str = base64.b64decode(response["data"]["question"])
+
+    proposition : list = []
+    for i in range(len(response["data"]["propositions"])):
+        proposition.append(base64.b64decode(response["data"]["propositions"][i]))
+    return (question,proposition)
+print(second_auth("Gabvas","Gab+2803"))
