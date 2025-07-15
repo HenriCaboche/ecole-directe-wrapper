@@ -55,14 +55,14 @@ def second_auth(UID, Password) -> tuple[str,list[str]]:
     response : str = requests.post(url="https://api.ecoledirecte.com/v3/connexion/doubleauth.awp?verbe=get",headers=heads,data=data)
     response = response.json()
 
-    question: str = str(base64.b64decode(response["data"]["question"]))
+    question: str = base64.b64decode(response["data"]["question"])
 
     proposition : list = []
     for i in range(len(response["data"]["propositions"])):
         proposition.append(base64.b64decode(response["data"]["propositions"][i]))
         proposition[i] =proposition[i].decode('unicode_escape').encode('latin1').decode('utf8')
 
-    print(question.decode('unicode_escape').encode('latin1').decode('utf8'))
+    question = question.decode('unicode_escape').encode('latin1').decode('utf8')
     return (question,proposition)
 
 def final_login(answer, UID, password) -> bool:
