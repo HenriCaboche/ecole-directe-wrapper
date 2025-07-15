@@ -114,7 +114,7 @@ def final_login(answer, UID, password) -> bool:
         heads["X-Token"] =token
         return True
     else:
-        raise Exception(f"Erreur finale login: {final_resp['message']}")
+        return False
 
 if __name__ == "__main__":
     try:
