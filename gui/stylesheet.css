@@ -113,12 +113,6 @@ QComboBox::drop-down {
     border-left: 1px solid #4C566A;
 }
 
-QComboBox::down-arrow {
-    image: url(:/icons/down-arrow.svg); /* Replace with your arrow icon path */
-    width: 12px;
-    height: 12px;
-}
-
 /* Scrollbars */
 QScrollBar:vertical {
     background-color: #2E3440;

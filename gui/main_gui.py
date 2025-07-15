@@ -35,6 +35,7 @@ def handle_login():
     password_textbox = QLineEdit(placeholderText= "Password")
     login_button = QPushButton("Log in")
     login_button.clicked.connect(handle_login_clicked)
+    password_textbox.setEchoMode(QLineEdit.Password) #type:ignore
     
     main_layout.addWidget(id_textbox)
     main_layout.addWidget(password_textbox)
