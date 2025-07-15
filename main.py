@@ -112,11 +112,12 @@ def final_login(answer, UID, password) -> bool:
     else:
         raise Exception(f"Erreur finale login: {final_resp['message']}")
 
-try:
-    print(second_auth("Gabvas","Gab+2803"))
-    answer= input("answer:  ")
-    final_login(answer,"Gabvas","Gab+2803")
-    time.sleep(1000)
-except Exception as e:
-     print(e)
-     input()
+if __name__ == "__main__":
+    try:
+        print(second_auth("Gabvas","Gab+2803"))
+        answer= input("answer:  ")
+        final_login(answer,"Gabvas","Gab+2803")
+        time.sleep(1000)
+    except Exception as e:
+        print(e)
+        input()
