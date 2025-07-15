@@ -107,7 +107,6 @@ def final_login(answer, UID, password) -> bool:
         data={"data": json_login}
     ).json()
 
-    print("FINAL LOGIN:", final_resp)
 
     if final_resp["code"] == 200:
         token = final_resp["token"]
