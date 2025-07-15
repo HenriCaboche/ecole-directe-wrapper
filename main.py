@@ -1,6 +1,7 @@
 import requests
 import json
 import base64
+import time
 
 # Session globale partagée
 session = requests.Session()
@@ -10,18 +11,22 @@ heads = {
 }
 
 def get_gtk_cookie():
-    url : str ="https://api.ecoledirecte.com/v3/login.awp"
+    url = "https://api.ecoledirecte.com/v3/login.awp"
     params = {"gtk": "1", "v": "4.75.0"}
 
-    response = session.get(url, headers=heads, params=params)
+    # Requête GET avec la session globale
+    response = session.get(url, headers={"User-Agent": heads["User-Agent"]}, params=params)
     response.raise_for_status()
 
-    gtk :str = session.cookies.get("GTK")
+    # Affiche tous les cookies reçus
+
+    gtk = session.cookies.get("GTK")
     if not gtk:
         raise Exception("GTK cookie non trouvé")
     gtk = gtk.replace("\r", "").replace("\n", "")
     heads["X-Gtk"] = gtk
     return gtk
+
 
 def login(user_id=str, password=str):
     get_gtk_cookie()
@@ -41,6 +46,7 @@ def login(user_id=str, password=str):
     ).json()
     token = response["token"]
 
+
     heads["X-Token"] = token
 
 def second_auth(UID, Password) -> tuple[str,list[str]]:
@@ -48,10 +54,69 @@ def second_auth(UID, Password) -> tuple[str,list[str]]:
     data: str = "data={}"  
     response : str = requests.post(url="https://api.ecoledirecte.com/v3/connexion/doubleauth.awp?verbe=get",headers=heads,data=data)
     response = response.json()
+
     question: str = base64.b64decode(response["data"]["question"])
 
     proposition : list = []
     for i in range(len(response["data"]["propositions"])):
         proposition.append(base64.b64decode(response["data"]["propositions"][i]))
     return (question,proposition)
-print(second_auth("Gabvas","Gab+2803"))
+
+def final_login(answer, UID, password) -> bool:
+    get_gtk_cookie()
+    encoded_answer = base64.b64encode(answer.encode()).decode()
+    data = f'data={{"choix":"{encoded_answer}"}}'
+    
+    # Double auth réponse
+    req = session.post(
+        url='https://api.ecoledirecte.com/v3/connexion/doubleauth.awp?verbe=post',
+        headers=heads,
+        data=data
+    ).json()
+    
+
+    cn = req['data']['cn']
+    cv = req['data']['cv']
+
+    # Re-login final avec cn/cv
+    login_data = {
+        "uuid": "",
+        "identifiant": UID,
+        "isRelogin": False,
+        "motdepasse": password,
+        "fa": [
+            {
+                "cn": cn,
+                "cv": cv
+            }
+        ]
+    }
+
+    json_login = json.dumps(login_data)
+
+    # Important: retirer ancien X-Token s'il existe
+    if "X-Token" in heads:
+        del heads["X-Token"]
+
+    final_resp = session.post(
+        "https://api.ecoledirecte.com/v3/login.awp?v=4.75.0",
+        headers=heads,
+        data={"data": json_login}
+    ).json()
+
+    print("FINAL LOGIN:", final_resp)
+
+    if final_resp["code"] == 200:
+        token = final_resp["token"]
+        heads["X-Token"] =token
+    else:
+        raise Exception(f"Erreur finale login: {final_resp['message']}")
+
+try:
+    print(second_auth("Gabvas","Gab+2803"))
+    answer= input("answer:  ")
+    final_login(answer,"Gabvas","Gab+2803")
+    time.sleep(1000)
+except Exception as e:
+     print(e)
+     input()
