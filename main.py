@@ -60,6 +60,9 @@ def second_auth(UID, Password) -> tuple[str,list[str]]:
     proposition : list = []
     for i in range(len(response["data"]["propositions"])):
         proposition.append(base64.b64decode(response["data"]["propositions"][i]))
+        proposition[i] =proposition[i].decode('unicode_escape').encode('latin1').decode('utf8')
+
+    print(question.decode('unicode_escape').encode('latin1').decode('utf8'))
     return (question,proposition)
 
 def final_login(answer, UID, password) -> bool:
