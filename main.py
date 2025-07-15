@@ -109,6 +109,7 @@ def final_login(answer, UID, password) -> bool:
     if final_resp["code"] == 200:
         token = final_resp["token"]
         heads["X-Token"] =token
+        return True
     else:
         raise Exception(f"Erreur finale login: {final_resp['message']}")
 
