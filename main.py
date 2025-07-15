@@ -43,7 +43,7 @@ def login(user_id=str, password=str):
 
     heads["X-Token"] = token
 
-def second_auth(UID, Password):
+def second_auth(UID, Password) -> tuple[str,list]:
     login(UID,Password)
     data: str = "data={}"  
     response : str = requests.post(url="https://api.ecoledirecte.com/v3/connexion/doubleauth.awp?verbe=get",headers=heads,data=data)
