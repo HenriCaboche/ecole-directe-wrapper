@@ -3,6 +3,9 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QLabel, QW
 
 window = None
 
+with open("stylesheet.css", 'r') as f:
+    stylesheet = f.read()
+
 def handle_login():
     global window
     window = QMainWindow()
@@ -21,6 +24,7 @@ def handle_login():
     main_layout.addWidget(password_textbox)
     main_widget.setLayout(main_layout)
 
+    window.setStyleSheet(stylesheet)
     window.show()
 
 
