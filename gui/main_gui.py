@@ -30,7 +30,7 @@ def handle_login():
     
     window.setCentralWidget(main_widget)
     
-    email_textbox = QLineEdit(placeholderText="Email")
+    email_textbox = QLineEdit(placeholderText="ID")
     password_textbox = QLineEdit(placeholderText= "Password")
     login_button = QPushButton("Log in")
     login_button.clicked.connect(handle_login_clicked)
@@ -46,8 +46,8 @@ def handle_login():
 
 def handle_login_clicked():
     global email_textbox, password_textbox, window
-    email = email_textbox.text()        #type:ignore
-    password = password_textbox.text()  #type:ignore
+    email = email_textbox.text()                  #type:ignore
+    password = password_textbox.text()            #type:ignore
     questions = main.second_auth(email, password) #type:ignore
     window.close() #type:ignore
     question_window = QMainWindow()
