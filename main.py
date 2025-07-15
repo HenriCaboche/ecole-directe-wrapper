@@ -22,16 +22,17 @@ def get_gtk_cookie():
     heads["X-Gtk"] = gtk
     return gtk
 
-def login():
+def login(user_id, password):
     get_gtk_cookie()
     data = {
-        "identifiant": "Gabvas",
-        "motdepasse": "Gab+2803",
+        "identifiant": user_id,
+        "motdepasse": password,
         "uuid": "",
         "isRelogin": False
     }
     json_data = json.dumps(data)
-    # Important : envoyer data encodé en application/x-www-form-urlencoded
+
+
     response = session.post(
         "https://api.ecoledirecte.com/v3/login.awp?v=4.75.0",
         headers=heads,
