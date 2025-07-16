@@ -53,7 +53,10 @@ def second_auth(UID, Password) -> tuple[str,list[str]]:
     login(UID,Password)
     data: str = "data={}"  
     response : str = requests.post(url="https://api.ecoledirecte.com/v3/connexion/doubleauth.awp?verbe=get",headers=heads,data=data)
-    response = response.json()
+    if response.status_code == 200:
+        response = response.json()
+    else:
+        return False
 
     question: str = base64.b64decode(response["data"]["question"])
 
@@ -65,7 +68,7 @@ def second_auth(UID, Password) -> tuple[str,list[str]]:
     question = question.decode('unicode_escape').encode('latin1').decode('utf8')
     return (question,proposition)
 
-def final_login(answer, UID, password) -> bool:
+def final_login(answer, UID, password) -> tuple:
     get_gtk_cookie()
     encoded_answer = base64.b64encode(answer.encode()).decode()
     data = f'data={{"choix":"{encoded_answer}"}}'
@@ -98,8 +101,6 @@ def final_login(answer, UID, password) -> bool:
     json_login = json.dumps(login_data)
 
     # Important: retirer ancien X-Token s'il existe
-    if "X-Token" in heads:
-        del heads["X-Token"]
 
     final_resp = session.post(
         "https://api.ecoledirecte.com/v3/login.awp?v=4.75.0",
@@ -107,20 +108,31 @@ def final_login(answer, UID, password) -> bool:
         data={"data": json_login}
     ).json()
 
-
     if final_resp["code"] == 200:
         token = final_resp["token"]
-        heads["X-Token"] =token
-        return True
+        return (True,final_resp["data"]["accounts"][0]["id"],token)
     else:
-        return False
+        return (False)
+    
+def notes(id,token):
+    print(token)
+    svt =[]
+    fra = []
+    a = 0
+    with open('token.txt', 'r') as file:
+            token = file.read().rstrip()
+    data={'token':token,
+    "anneeScolaire": ""}
+    jsond = json.dumps(data)
+    req = requests.get("https://api.ecoledirecte.com/v3/eleves/8666/notes.awp?verbe=get",headers=heads,data={'data': jsond}).text   
+    print(req)
 
 if __name__ == "__main__":
     try:
         print(second_auth("Gabvas","Gab+2803"))
         answer= input("answer:  ")
-        final_login(answer,"Gabvas","Gab+2803")
-        time.sleep(1000)
+        token = final_login(answer,"Gabvas","Gab+2803")[2]
+        notes(8666,token)
     except Exception as e:
         print(e)
         input()
