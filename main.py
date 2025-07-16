@@ -116,15 +116,12 @@ def final_login(answer, UID, password) -> tuple:
     
 def notes(id,token):
     print(token)
-    svt =[]
-    fra = []
-    a = 0
     with open('token.txt', 'r') as file:
             token = file.read().rstrip()
     data={'token':token,
     "anneeScolaire": ""}
     jsond = json.dumps(data)
-    req = requests.get("https://api.ecoledirecte.com/v3/eleves/8666/notes.awp?verbe=get",headers=heads,data={'data': jsond}).json()   
+    req = requests.get(f"https://api.ecoledirecte.com/v3/eleves/{id}/notes.awp?verbe=get",headers=heads,data={'data': jsond}).json()   
     return req
 
 if __name__ == "__main__":
