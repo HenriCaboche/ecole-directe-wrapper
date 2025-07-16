@@ -124,8 +124,8 @@ def notes(id,token):
     data={'token':token,
     "anneeScolaire": ""}
     jsond = json.dumps(data)
-    req = requests.get("https://api.ecoledirecte.com/v3/eleves/8666/notes.awp?verbe=get",headers=heads,data={'data': jsond}).text   
-    print(req)
+    req = requests.get("https://api.ecoledirecte.com/v3/eleves/8666/notes.awp?verbe=get",headers=heads,data={'data': jsond}).json()   
+    return req
 
 if __name__ == "__main__":
     try:
