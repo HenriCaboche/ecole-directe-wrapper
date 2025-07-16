@@ -7,6 +7,9 @@ if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 import main
 
+
+debug_show_password = True
+
 id_textbox: Optional[QLineEdit] = None
 password_textbox: Optional[QLineEdit] = None
 responses = None
@@ -16,6 +19,7 @@ stylesheet_path = os.path.join(script_dir, "stylesheet.css")
 
 window = None
 question_window = None
+wrong_awnser_label = None
 
 with open(stylesheet_path, 'r') as f:
     stylesheet = f.read()
@@ -35,22 +39,26 @@ def handle_login():
     password_textbox = QLineEdit(placeholderText= "Password")
     login_button = QPushButton("Log in")
     login_button.clicked.connect(handle_login_clicked)
-    password_textbox.setEchoMode(QLineEdit.Password) #type:ignore
+    if not debug_show_password:
+        password_textbox.setEchoMode(QLineEdit.Password) #type:ignore
     
     main_layout.addWidget(id_textbox)
     main_layout.addWidget(password_textbox)
     main_layout.addWidget(login_button)
 
+    
     main_widget.setLayout(main_layout)
 
     window.setStyleSheet(stylesheet)
     window.show()
 
 def handle_login_clicked():
-    global id_textbox, password_textbox, window, question_window, responses
-    user_id = id_textbox.text()                  #type:ignore
-    password = password_textbox.text()            #type:ignore
+    global id_textbox, password_textbox, window, question_window, responses, wrong_awnser_label
+    user_id = id_textbox.text()                     #type:ignore
+    password = password_textbox.text()              #type:ignore
     questions = main.second_auth(user_id, password) #type:ignore
+    if question == False or not question:
+        print("Unable to connect, Maybe wrong password ?")
     window.close() #type:ignore
     question_window = QMainWindow()
     question_window.setWindowTitle("Login to WrapperDirecte")
@@ -69,9 +77,15 @@ def handle_login_clicked():
     continue_button = QPushButton('Continue')
     continue_button.clicked.connect(handle_question_awnser)
     
+    wrong_awnser_label = QLabel("Wrong awnser, try again.")
+    wrong_awnser_label.hide()
+    wrong_awnser_label.setObjectName("Error")
+    
     main_layout.addWidget(question_label)
     main_layout.addWidget(responses)
     main_layout.addWidget(continue_button)
+    main_layout.addWidget(wrong_awnser_label)
+    
     
     question_window.setStyleSheet(stylesheet)
     question_window.setCentralWidget(main_widget)
@@ -86,7 +100,10 @@ def handle_question_awnser():
     if is_correct:
         print("Should call 'handle_continue_to_app'")
     else:
-        print('Should quit the app')
+        print("Wrong awnser")
+        wrong_awnser_label.show()
+        
+
 def main_loop():
     app = QApplication(sys.argv)
 

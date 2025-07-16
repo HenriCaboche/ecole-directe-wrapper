@@ -195,3 +195,6 @@ QToolTip {
     border-radius: 4px;
     opacity: 230;
 }
+#Error {
+    color: red
+}
