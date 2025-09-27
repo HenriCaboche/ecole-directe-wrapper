@@ -130,6 +130,7 @@ def homework(id,token):
     dates = list(req["data"].keys())
     print(dates)
     data = []
+    homework = []
     for day in dates:
         print(day)
         req = session.post(f"https://api.ecoledirecte.com/v3/Eleves/{id}/cahierdetexte/{day}.awp?verbe=get",headers=heads,data={'data': jsond}).json()
@@ -137,10 +138,11 @@ def homework(id,token):
         for e in data:
             day_keys=e.keys()
             if 'aFaire' in day_keys:
-                print(f'{e["matiere"]} -- {e["nomProf"]}')
-                print(f'\n\n { re.sub(r"<.*?>", "",base64.b64decode(e["aFaire"]["contenu"]).decode("unicode_escape").encode("latin1").decode("utf8"))}\n\n\n-------------')
+                homework.append(f'{e["matiere"]} -- {e["nomProf"]}')
+                homework.append(f'\n\n { re.sub(r"<.*?>", "",base64.b64decode(e["aFaire"]["contenu"]).decode("unicode_escape").encode("latin1").decode("utf8"))}\n\n\n-------------')
             else:
                 break
+    return homework
     
 
 def timetable(id,token):
@@ -156,33 +158,32 @@ def timetable(id,token):
     jsond = json.dumps(data)
     req = session.post(f"https://api.ecoledirecte.com/v3/E/{id}/emploidutemps.awp?verbe=get",headers=heads,data={'data': jsond}).json()
     previous_date = 0
+    timetable  = []
     for x in range(len(req['data'])):
   
             horaire = req['data'][x]['start_date']
             horaire= str(horaire).split()
             horaire2 = req['data'][x]['end_date']
             horaire2= str(horaire2).split()
+
             if not horaire2[0] == previous_date:
                 print("--------------")
 
-            print(req['data'][x]['text'])
-            print(horaire[1]+"--"+horaire2[1])
+            timetable(req['data'][x]['text'])
+            timetable.append(horaire[1]+"--"+horaire2[1])
             previous_date = horaire2[0]
+    return timetable
 
 
 
+def callable(username,password,func):
 
-if __name__ == "__main__":
-    try:
-        username = input("username: ")
-        password = input("password: ")
-
-        print(second_auth(username,password))
+        second_auth(username,password)
         answer= input("answer:  ")
         final = final_login(answer,username,password)
         token = final[2]
         id=final[1]
-        print(homework(id,token))
-    except Exception as e:
-        print(e)
-        input()
+        if func == "homework":
+            return homework(id,token)
+        
+callable("Gabvas","Gab+2803","homework")
