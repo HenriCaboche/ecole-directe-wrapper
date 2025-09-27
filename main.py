@@ -185,5 +185,3 @@ def callable(username,password,func):
         id=final[1]
         if func == "homework":
             return homework(id,token)
-        
-callable("Gabvas","Gab+2803","homework")
