@@ -1,9 +1,9 @@
 import requests
 import json
 import base64
-import time
+import re
+import datetime
 
-# Session globale partagée
 session = requests.Session()
 
 heads = {
@@ -14,11 +14,9 @@ def get_gtk_cookie():
     url = "https://api.ecoledirecte.com/v3/login.awp"
     params = {"gtk": "1", "v": "4.75.0"}
 
-    # Requête GET avec la session globale
     response = session.get(url, headers={"User-Agent": heads["User-Agent"]}, params=params)
     response.raise_for_status()
 
-    # Affiche tous les cookies reçus
 
     gtk = session.cookies.get("GTK")
     if not gtk:
@@ -52,8 +50,9 @@ def login(user_id=str, password=str):
 def second_auth(UID, Password) -> tuple[str,list[str]]:
     login(UID,Password)
     data: str = "data={}"  
-    response : str = requests.post(url="https://api.ecoledirecte.com/v3/connexion/doubleauth.awp?verbe=get",headers=heads,data=data)
+    response = session.post(url="https://api.ecoledirecte.com/v3/connexion/doubleauth.awp?verbe=get",headers=heads,data=data)  
     if response.status_code == 200:
+        
         response = response.json()
     else:
         return False
@@ -72,8 +71,7 @@ def final_login(answer, UID, password) -> tuple:
     get_gtk_cookie()
     encoded_answer = base64.b64encode(answer.encode()).decode()
     data = f'data={{"choix":"{encoded_answer}"}}'
-    
-    # Double auth réponse
+
     req = session.post(
         url='https://api.ecoledirecte.com/v3/connexion/doubleauth.awp?verbe=post',
         headers=heads,
@@ -84,7 +82,6 @@ def final_login(answer, UID, password) -> tuple:
     cn = req['data']['cn']
     cv = req['data']['cv']
 
-    # Re-login final avec cn/cv
     login_data = {
         "uuid": "",
         "identifiant": UID,
@@ -100,36 +97,92 @@ def final_login(answer, UID, password) -> tuple:
 
     json_login = json.dumps(login_data)
 
-    # Important: retirer ancien X-Token s'il existe
+
 
     final_resp = session.post(
         "https://api.ecoledirecte.com/v3/login.awp?v=4.75.0",
         headers=heads,
         data={"data": json_login}
     ).json()
-
     if final_resp["code"] == 200:
         token = final_resp["token"]
+        heads["X-Token"] = token  
         return (True,final_resp["data"]["accounts"][0]["id"],token)
     else:
         return (False)
     
 def notes(id,token):
-    print(token)
-    with open('token.txt', 'r') as file:
-            token = file.read().rstrip()
+    print(heads)
     data={'token':token,
     "anneeScolaire": ""}
     jsond = json.dumps(data)
-    req = requests.get(f"https://api.ecoledirecte.com/v3/eleves/{id}/notes.awp?verbe=get",headers=heads,data={'data': jsond}).json()   
+    req = session.get(f"https://api.ecoledirecte.com/v3/eleves/{id}/notes.awp?verbe=get",headers=heads,data={'data': jsond}).json() 
     return req
+
+def homework(id,token):
+
+    print(token)
+    data= {
+}
+
+    jsond = json.dumps(data)
+    req = session.post(f"https://api.ecoledirecte.com/v3/Eleves/{id}/cahierdetexte.awp?verbe=get",headers=heads,data={'data': jsond}).json()
+    dates = list(req["data"].keys())
+    print(dates)
+    data = []
+    for day in dates:
+        print(day)
+        req = session.post(f"https://api.ecoledirecte.com/v3/Eleves/{id}/cahierdetexte/{day}.awp?verbe=get",headers=heads,data={'data': jsond}).json()
+        data=(req["data"]["matieres"])
+        for e in data:
+            day_keys=e.keys()
+            if 'aFaire' in day_keys:
+                print(f'{e["matiere"]} -- {e["nomProf"]}')
+                print(f'\n\n { re.sub(r"<.*?>", "",base64.b64decode(e["aFaire"]["contenu"]).decode("unicode_escape").encode("latin1").decode("utf8"))}\n\n\n-------------')
+            else:
+                break
+    
+
+def timetable(id,token):
+    x = str(datetime.datetime.now()).split()
+    print(x[0])
+    datefin = int(x[0].split("-")[2])+4
+    datefin = x[0].split("-")[0]+"-"+x[0].split("-")[1]+"-"+str(datefin)
+    print(datefin)
+    data={'token':token,
+        "dateDebut": x[0],
+        "dateFin": datefin,
+        "avecTrous": True}
+    jsond = json.dumps(data)
+    req = session.post(f"https://api.ecoledirecte.com/v3/E/{id}/emploidutemps.awp?verbe=get",headers=heads,data={'data': jsond}).json()
+    previous_date = 0
+    for x in range(len(req['data'])):
+  
+            horaire = req['data'][x]['start_date']
+            horaire= str(horaire).split()
+            horaire2 = req['data'][x]['end_date']
+            horaire2= str(horaire2).split()
+            if not horaire2[0] == previous_date:
+                print("--------------")
+
+            print(req['data'][x]['text'])
+            print(horaire[1]+"--"+horaire2[1])
+            previous_date = horaire2[0]
+
+
+
 
 if __name__ == "__main__":
     try:
-        print(second_auth("Gabvas","Gab+2803"))
+        username = input("username: ")
+        password = input("password: ")
+
+        print(second_auth(username,password))
         answer= input("answer:  ")
-        token = final_login(answer,"Gabvas","Gab+2803")[2]
-        notes(8666,token)
+        final = final_login(answer,username,password)
+        token = final[2]
+        id=final[1]
+        print(homework(id,token))
     except Exception as e:
         print(e)
         input()
