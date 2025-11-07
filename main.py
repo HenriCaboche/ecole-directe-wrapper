@@ -36,21 +36,41 @@ def login(user_id=str, password=str):
     }
     json_data = json.dumps(data)
 
-
     response = session.post(
-        "https://api.ecoledirecte.com/v3/login.awp?v=4.75.0",
+        "https://api.ecoledirecte.com/v3/login.awp?v=4.88.0",
         headers=heads,
         data={"data": json_data}
-    ).json()
-    token = response["token"]
-
-
-    heads["X-Token"] = token
+    )
+    
+    response_json = response.json()
+    
+    # Capture BOTH tokens from response headers
+    token = response.headers.get("X-Token") or response_json.get("token")
+    tfa_token = response.headers.get("2FA-Token")
+    
+    print(f"X-Token: {token}")
+    print(f"2FA-Token: {tfa_token}")
+    
+    if token:
+        heads["X-Token"] = token
+    if tfa_token:
+        heads["2FA-Token"] = tfa_token  # ADD THIS!
+    
+    return token
 
 def second_auth(UID, Password) -> tuple[str,list[str]]:
-    login(UID,Password)
-    data: str = "data={}"  
-    response = session.post(url="https://api.ecoledirecte.com/v3/connexion/doubleauth.awp?verbe=get",headers=heads,data=data)  
+    login(UID, Password)
+    
+    # Now heads includes both X-Token AND 2FA-Token
+    print(f"Headers for 2FA: {heads}")
+    
+    data = json.dumps({})
+    
+    response = session.post(
+        url="https://api.ecoledirecte.com/v3/connexion/doubleauth.awp?verbe=get",
+        headers=heads,  # Now includes 2FA-Token!
+        data={"data": data}
+    ) 
     if response.status_code == 200:
         
         response = response.json()
@@ -169,19 +189,54 @@ def timetable(id,token):
             if not horaire2[0] == previous_date:
                 print("--------------")
 
-            timetable(req['data'][x]['text'])
+            timetable.append(req['data'][x]['text'])
             timetable.append(horaire[1]+"--"+horaire2[1])
             previous_date = horaire2[0]
     return timetable
 
+def moyennes(id, token):
+    data = {'token': token}
+    jsond = json.dumps(data)
+    req = session.post(
+        f"https://api.ecoledirecte.com/v3/eleves/{id}/notes.awp?verbe=get",
+        headers=heads,
+        data={'data': jsond}
+    ).json()
+    
+    results = []
+    
+    if 'data' in req and 'periodes' in req['data']:
+        for period in req['data']['periodes']:
+            if 'ensembleMatieres' in period:
+                ensemble = period['ensembleMatieres']
 
+                if ensemble.get('moyenneGenerale'):
+                    results.append({
+                        'name': 'MOYENNE GÉNÉRALE',
+                        'moyenne': ensemble.get('moyenneGenerale'),
+                        'moyenneClasse': ensemble.get('moyenneClasse'),
+                        'rang': None
+                    })
+
+                for discipline in ensemble.get('disciplines', []):
+                    if discipline.get('moyenne'):
+                        results.append({
+                            'name': discipline.get('discipline'),
+                            'moyenne': discipline.get('moyenne'),
+                            'moyenneClasse': discipline.get('moyenneClasse'),
+                            'rang': discipline.get('rang'),
+                            'effectif': discipline.get('effectif')
+                        })
+    return results
 
 def callable(username,password,func):
 
-        second_auth(username,password)
+        print(second_auth(username,password))
         answer= input("answer:  ")
         final = final_login(answer,username,password)
         token = final[2]
         id=final[1]
         if func == "homework":
             return homework(id,token)
+        else:
+             return(moyennes(id,token))
